@@ -27,4 +27,6 @@ WORKDIR /root/
 COPY --from=builder /app/secret-clone-controller .
 
 # Command to run the executable
-CMD ["./secret-clone-controller"]
+# CMD ["./secret-clone-controller"]
+
+ENTRYPOINT ["./secret-clone-controller"]
