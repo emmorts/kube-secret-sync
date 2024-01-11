@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
 
@@ -45,75 +46,97 @@ func main() {
 		klog.Fatalf("Error creating clientset: %v", err)
 	}
 
-	watchPods(clientset)
+	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pods")
+	podController := NewPodController(clientset, queue)
+	podController.Run()
 }
 
-func watchPods(clientset *kubernetes.Clientset) {
-	podListWatcher := cache.NewListWatchFromClient(clientset.CoreV1().RESTClient(), "pods", metav1.NamespaceAll, fields.Everything())
+type PodController struct {
+	clientset *kubernetes.Clientset
+	queue     workqueue.RateLimitingInterface
+}
 
-	_, controller := cache.NewInformer(
+func NewPodController(clientset *kubernetes.Clientset, queue workqueue.RateLimitingInterface) *PodController {
+	return &PodController{
+		clientset: clientset,
+		queue:     queue,
+	}
+}
+
+func (c *PodController) Run() {
+	podListWatcher := cache.NewListWatchFromClient(c.clientset.CoreV1().RESTClient(), "pods", metav1.NamespaceAll, fields.Everything())
+
+	_, informer := cache.NewInformer(
 		podListWatcher,
 		&v1.Pod{},
-		0, // Duration is set to 0 for no resync
+		0,
 		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				pod := obj.(*v1.Pod)
-				go handlePod(clientset, pod) // Changed to a goroutine for concurrent handling
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				newPod := newObj.(*v1.Pod)
-				go handlePod(clientset, newPod) // Changed to a goroutine for concurrent handling
+			AddFunc: c.enqueuePod,
+			UpdateFunc: func(old, new interface{}) {
+				c.enqueuePod(new)
 			},
 		},
 	)
 
 	stop := make(chan struct{})
 	defer close(stop)
-	go controller.Run(stop)
+	go informer.Run(stop)
 
-	select {} // Block forever
-}
-
-func handlePod(clientset *kubernetes.Clientset, pod *v1.Pod) {
-	if strings.Contains(pod.Spec.Containers[0].Image, targetImage) {
-		klog.Infof("Found pod with target image in namespace: %s", pod.Namespace)
-		if _, exists := processedNamespaces.Load(pod.Namespace); !exists {
-			cloneSecretToNamespace(clientset, pod.Namespace)
+	for {
+		pod, shutdown := c.queue.Get()
+		if shutdown {
+			break
 		}
+
+		if err := c.processPod(pod.(*v1.Pod)); err != nil {
+			klog.Errorf("Error processing pod: %v", err)
+			c.queue.AddRateLimited(pod)
+		} else {
+			c.queue.Forget(pod)
+		}
+		c.queue.Done(pod)
 	}
 }
 
-func cloneSecretToNamespace(clientset *kubernetes.Clientset, namespace string) {
-	if _, exists := processedNamespaces.Load(namespace); exists {
-		klog.Infof("Namespace %s has already been processed, skipping", namespace)
-		return
+func (c *PodController) enqueuePod(obj interface{}) {
+	pod := obj.(*v1.Pod)
+	if strings.Contains(pod.Spec.Containers[0].Image, targetImage) {
+		c.queue.Add(pod)
+	}
+}
+
+func (c *PodController) processPod(pod *v1.Pod) error {
+	klog.Infof("Processing pod in namespace: %s", pod.Namespace)
+	if _, exists := processedNamespaces.Load(pod.Namespace); exists {
+		return nil
 	}
 
-	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err == nil {
-		// If there's no error, it means the secret already exists
-		klog.Infof("Secret %s already exists in namespace %s, skipping clone", secretName, namespace)
-		return
+	if _, err := c.clientset.CoreV1().Secrets(pod.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{}); err == nil {
+		klog.Infof("Secret %s already exists in namespace %s", secretName, pod.Namespace)
+		return nil
 	}
 
-	secret, err := clientset.CoreV1().Secrets(sourceNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	secret, err := c.clientset.CoreV1().Secrets(sourceNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get secret from source namespace: %v", err)
-		return
+		return err
 	}
 
-	secret.Namespace = namespace
+	secret.Namespace = pod.Namespace
 	secret.ResourceVersion = ""
+	secret.UID = ""
 
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err := c.clientset.CoreV1().Secrets(pod.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		return err
 	})
 
 	if err != nil {
-		klog.Errorf("Failed to clone secret to namespace %s: %v", namespace, err)
-	} else {
-		klog.Infof("Successfully cloned secret to namespace %s", namespace)
-		processedNamespaces.Store(namespace, struct{}{}) // Store the namespace in the cache
+		klog.Errorf("Failed to clone secret to namespace %s: %v", pod.Namespace, err)
+		return err
 	}
+
+	klog.Infof("Successfully cloned secret to namespace %s", pod.Namespace)
+	processedNamespaces.Store(pod.Namespace, struct{}{})
+	return nil
 }
