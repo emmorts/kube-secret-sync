@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"strings"
+	"sync"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,9 +17,10 @@ import (
 )
 
 var (
-	secretName      string
-	sourceNamespace string
-	targetImage     string
+	secretName          string
+	sourceNamespace     string
+	targetImage         string
+	processedNamespaces sync.Map
 )
 
 func init() {
@@ -56,11 +58,11 @@ func watchPods(clientset *kubernetes.Clientset) {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
-				handlePod(clientset, pod)
+				go handlePod(clientset, pod) // Changed to a goroutine for concurrent handling
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				newPod := newObj.(*v1.Pod)
-				handlePod(clientset, newPod)
+				go handlePod(clientset, newPod) // Changed to a goroutine for concurrent handling
 			},
 		},
 	)
@@ -75,11 +77,25 @@ func watchPods(clientset *kubernetes.Clientset) {
 func handlePod(clientset *kubernetes.Clientset, pod *v1.Pod) {
 	if strings.Contains(pod.Spec.Containers[0].Image, targetImage) {
 		klog.Infof("Found pod with target image in namespace: %s", pod.Namespace)
-		cloneSecretToNamespace(clientset, pod.Namespace)
+		if _, exists := processedNamespaces.Load(pod.Namespace); !exists {
+			cloneSecretToNamespace(clientset, pod.Namespace)
+		}
 	}
 }
 
 func cloneSecretToNamespace(clientset *kubernetes.Clientset, namespace string) {
+	if _, exists := processedNamespaces.Load(namespace); exists {
+		klog.Infof("Namespace %s has already been processed, skipping", namespace)
+		return
+	}
+
+	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	if err == nil {
+		// If there's no error, it means the secret already exists
+		klog.Infof("Secret %s already exists in namespace %s, skipping clone", secretName, namespace)
+		return
+	}
+
 	secret, err := clientset.CoreV1().Secrets(sourceNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get secret from source namespace: %v", err)
@@ -87,7 +103,7 @@ func cloneSecretToNamespace(clientset *kubernetes.Clientset, namespace string) {
 	}
 
 	secret.Namespace = namespace
-	secret.ResourceVersion = "" // Clear the resource version
+	secret.ResourceVersion = ""
 
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
@@ -98,8 +114,6 @@ func cloneSecretToNamespace(clientset *kubernetes.Clientset, namespace string) {
 		klog.Errorf("Failed to clone secret to namespace %s: %v", namespace, err)
 	} else {
 		klog.Infof("Successfully cloned secret to namespace %s", namespace)
+		processedNamespaces.Store(namespace, struct{}{}) // Store the namespace in the cache
 	}
 }
-
-// Note: Ensure appropriate RBAC roles and rolebindings are configured for this controller
-// to watch pods across all namespaces and manage secrets.
