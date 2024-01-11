@@ -1,0 +1,24 @@
+kind: pipeline
+type: docker
+name: deploy
+
+steps:
+  - name: build and publish
+    image: plugins/docker
+    settings:
+      mtu: 1450
+      registry: git.stropus.dev
+      username:
+        from_secret: GITEA_USER
+      password:
+        from_secret: GITEA_TOKEN
+      repo: git.stropus.dev/ops/kube-secret-sync
+      tags: ${DRONE_TAG}
+      dockerfile: ./Dockerfile
+
+trigger:
+  branch:
+    include:
+      - main
+      - develop
+      - feature/*
