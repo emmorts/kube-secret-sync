@@ -5,6 +5,7 @@ import (
 	"flag"
 	"strings"
 	"sync"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,9 +27,9 @@ var (
 
 func init() {
 	// Command-line flags for configuration
-	flag.StringVar(&secretName, "secret-name", "gitea-creds", "Name of the secret to clone")
+	flag.StringVar(&secretName, "secret-name", "my-secret", "Name of the secret to clone")
 	flag.StringVar(&sourceNamespace, "source-namespace", "default", "Namespace of the source secret")
-	flag.StringVar(&targetImage, "target-image", "git.stropus.dev", "Image string to look for in pods")
+	flag.StringVar(&targetImage, "target-image", "my-image", "Image string to look for in pods")
 	klog.InitFlags(nil)
 	flag.Parse()
 }
@@ -106,6 +107,11 @@ func (c *PodController) enqueuePod(obj interface{}) {
 }
 
 func (c *PodController) processPod(pod *v1.Pod) error {
+	startTime := time.Now()
+	defer func() {
+		klog.Infof("Processed pod in namespace: %s in %v", pod.Namespace, time.Since(startTime))
+	}()
+
 	klog.Infof("Processing pod in namespace: %s", pod.Namespace)
 	if _, exists := processedNamespaces.Load(pod.Namespace); exists {
 		return nil
