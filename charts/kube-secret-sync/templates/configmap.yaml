@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kube-secret-sync.configmap" . }}
+data:
+  SECRET_NAME: {{ .Values.configuration.SECRET_NAME }}
+  SOURCE_NAMESPACE: {{ .Values.configuration.SOURCE_NAMESPACE }}
+  TARGET_IMAGE: {{ .Values.configuration.TARGET_IMAGE }}

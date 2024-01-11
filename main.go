@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"flag"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -26,12 +26,22 @@ var (
 )
 
 func init() {
-	// Command-line flags for configuration
-	flag.StringVar(&secretName, "secret-name", "my-secret", "Name of the secret to clone")
-	flag.StringVar(&sourceNamespace, "source-namespace", "default", "Namespace of the source secret")
-	flag.StringVar(&targetImage, "target-image", "my-image", "Image string to look for in pods")
+	secretName = os.Getenv("SECRET_NAME")
+	if secretName == "" {
+		klog.Fatalf("SECRET_NAME environment variable not set")
+	}
+
+	sourceNamespace = os.Getenv("SOURCE_NAMESPACE")
+	if sourceNamespace == "" {
+		klog.Fatalf("SOURCE_NAMESPACE environment variable not set")
+	}
+
+	targetImage = os.Getenv("TARGET_IMAGE")
+	if targetImage == "" {
+		klog.Fatalf("TARGET_IMAGE environment variable not set")
+	}
+
 	klog.InitFlags(nil)
-	flag.Parse()
 }
 
 func main() {

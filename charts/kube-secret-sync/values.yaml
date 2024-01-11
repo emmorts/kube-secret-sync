@@ -1,0 +1,30 @@
+replicaCount: 1
+
+image:
+  repository: git.stropus.dev/ops/kube-secret-sync
+  pullPolicy: Always
+  tag: latest
+
+imagePullSecrets: 
+  - name: gitea-creds
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+configuration:
+  SECRET_NAME: ""
+  SOURCE_NAMESPACE: ""
+  TARGET_IMAGE: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+resources: {}
+autoscaling: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
