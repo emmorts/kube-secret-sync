@@ -134,7 +134,7 @@ func (c *PodController) processQueue() {
 func (c *PodController) processPod(pod *v1.Pod) error {
 	startTime := time.Now()
 	defer func() {
-		klog.Infof("Processed pod in namespace: %s in %v", pod.Namespace, time.Since(startTime))
+		klog.Infof("Processed pod '%s' in namespace '%s' in %v", pod.Name, pod.Namespace, time.Since(startTime))
 	}()
 
 	if _, exists := c.processed.Load(pod.Namespace); exists {
@@ -151,7 +151,7 @@ func (c *PodController) processPod(pod *v1.Pod) error {
 
 func (c *PodController) cloneSecretToNamespace(namespace string) error {
 	if _, err := c.clientset.CoreV1().Secrets(namespace).Get(context.TODO(), c.config.secretName, metav1.GetOptions{}); err == nil {
-		klog.Infof("Secret %s already exists in namespace %s", c.config.secretName, namespace)
+		klog.Infof("Secret '%s' already exists in namespace '%s'", c.config.secretName, namespace)
 		return nil
 	}
 
