@@ -4,8 +4,8 @@ jobs:
   steps:
   - !BuildImageWithKanikoStep
     name: Build and Publish
-    buildContext: .
     destinations: ops/kube-secret-sync:latest
+    moreOptions: --dockerfile ./Dockerfile
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
