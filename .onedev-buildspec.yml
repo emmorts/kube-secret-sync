@@ -1,0 +1,14 @@
+version: 29
+jobs:
+- name: Publish Image
+  steps:
+  - !BuildImageStep
+    name: Release
+    tags: ops/kube-secret-sync:latest
+    publish: true
+    removeDanglingImages: true
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
