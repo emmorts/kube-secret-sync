@@ -2,10 +2,15 @@ version: 29
 jobs:
 - name: Publish Image
   steps:
+  - !CheckoutStep
+    name: Checkout
+    cloneCredential: !DefaultCredential {}
+    withLfs: false
+    withSubmodules: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !BuildImageWithKanikoStep
     name: Build and Publish
     destinations: ops/kube-secret-sync:latest
-    moreOptions: --dockerfile ./Dockerfile
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
