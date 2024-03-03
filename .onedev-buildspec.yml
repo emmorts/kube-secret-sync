@@ -2,11 +2,9 @@ version: 29
 jobs:
 - name: Publish Image
   steps:
-  - !BuildImageStep
-    name: Release
-    tags: ops/kube-secret-sync:latest
-    publish: true
-    removeDanglingImages: true
+  - !BuildImageWithKanikoStep
+    name: Build and Publish
+    destinations: ops/kube-secret-sync:latest
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
