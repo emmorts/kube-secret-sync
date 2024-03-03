@@ -10,7 +10,7 @@ jobs:
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !BuildImageWithKanikoStep
     name: Build and Publish
-    destinations: ops/kube-secret-sync:latest
+    destinations: onedev.stropus.dev/ops/kube-secret-sync:latest
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
