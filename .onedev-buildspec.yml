@@ -11,6 +11,7 @@ jobs:
   - !BuildImageWithKanikoStep
     name: Build and Publish
     destinations: onedev.stropus.dev/ops/kube-secret-sync:latest
+    builtInRegistryAccessTokenSecret: ci-token
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
