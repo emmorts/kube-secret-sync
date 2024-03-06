@@ -1,6 +1,6 @@
 # kube-secret-sync
 
-Kubernetes controller that automatically syncs secrets across namespaces based on provided configuration. It simplifies the management of secrets in multi-tenant environments by ensuring that specific secrets are available in the required namespaces.
+Kube Secret Sync is a Kubernetes controller that automatically syncs secrets across namespaces based on provided configuration. It simplifies the management of secrets in multi-tenant environments by ensuring that specific secrets are available in the required namespaces.
 
 ## Features
 
@@ -9,11 +9,6 @@ Kubernetes controller that automatically syncs secrets across namespaces based o
 - Automatic secret cloning when new pods are created or updated
 - Efficient processing using informers and work queues
 - Retries on conflicts to handle concurrent updates
-
-## Table of Contents
-
-- [Configuration](#configuration)
-- [Usage](#usage)
 
 ## Configuration
 
@@ -33,7 +28,7 @@ In this example, the controller will:
 - Sync the secret `github-credentials` from namespace `ns1` to all namespaces that contain pods with an image name containing the string `github.io`.
 - Sync the secret `gitlab-credentials` from namespace `ns2` to all namespaces that contain pods with an image name containing the string `st0.foolab.com`.
 
-## Usage
+## Installation
 
 To use the `kube-secret-sync` controller in your Kubernetes cluster, you can deploy it using the provided Helm chart.
 
@@ -68,4 +63,10 @@ To use the `kube-secret-sync` controller in your Kubernetes cluster, you can dep
 
 Now, the `kube-secret-sync` controller will automatically sync the specified secrets across namespaces based on the provided configurations.
 
+## Configuration Options
+
 For more information on the available configuration options and their default values, refer to the [chart documentation](charts/kube-secret-sync/README.md).
+
+## Contributing
+
+Contributions to kube-secret-sync are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/emmorts/kube-secret-sync).
