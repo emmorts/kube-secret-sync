@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: git.stropus.dev/ops/kube-secret-sync
+  repository: ghcr.io/emmorts/kube-secret-sync
   pullPolicy: Always
   tag: latest
 

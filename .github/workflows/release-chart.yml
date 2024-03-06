@@ -3,7 +3,7 @@ name: Release Charts
 on:
   push:
     branches:
-      - main_doesntexist
+      - main
 
 jobs:
   release:
