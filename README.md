@@ -35,4 +35,35 @@ In this example, the controller will:
 
 ## Usage
 
-TBD
+To use the `kube-secret-sync` controller in your Kubernetes cluster, you can deploy it using the provided Helm chart.
+
+1. Add the Helm repository:
+
+   ```
+   helm repo add kube-secret-sync https://emmorts.github.io/kube-secret-sync/
+   ```
+
+2. Update the Helm repository:
+
+   ```
+   helm repo update
+   ```
+
+3. Install the `kube-secret-sync` chart:
+
+   ```
+   helm install kube-secret-sync kube-secret-sync/kube-secret-sync \
+     --set configuration.SYNC_CONFIGS="github-credentials,ns1,ghcr.io;gitlab-credentials,ns2,st0.foolab.com"
+   ```
+
+   Replace the value of `configuration.SYNC_CONFIGS` with your desired secret sync configurations.
+
+4. Verify the installation:
+
+   ```
+   kubectl get pods -l app.kubernetes.io/name=kube-secret-sync
+   ```
+
+   Ensure that the `kube-secret-sync` pod is running and ready.
+
+Now, the `kube-secret-sync` controller will automatically sync the specified secrets across namespaces based on the provided configurations.

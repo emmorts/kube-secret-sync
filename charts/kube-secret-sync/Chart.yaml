@@ -6,6 +6,7 @@ appVersion: "0.1.0"
 home: https://github.com/emmorts/kube-secret-sync
 sources:
 - https://github.com/emmorts/kube-secret-sync
+icon: https://github.com/emmorts/kube-secret-sync/blob/main/logo.jpg?raw=true
 maintainers:
 - name: Tomas Stropus
   email: tomas@stropus.dev
