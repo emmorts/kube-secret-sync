@@ -3,14 +3,14 @@ jobs:
 - name: Publish Image
   steps:
   - !CheckoutStep
-    name: Checkout
+    name: checkout
     cloneCredential: !DefaultCredential {}
     withLfs: false
     withSubmodules: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !BuildImageWithKanikoStep
-    name: Build and Publish
-    destinations: onedev.stropus.dev/ops/kube-secret-sync:latest
+    name: publish docker image
+    destinations: '@server_host@/@project_path@:latest'
     builtInRegistryAccessTokenSecret: ci-token
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
