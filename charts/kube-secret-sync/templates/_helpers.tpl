@@ -62,5 +62,5 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "kube-secret-sync.configmap" -}}
-{{- printf "%s-%s-configmap" .Release.Name .Values.components.web.name | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-configmap" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

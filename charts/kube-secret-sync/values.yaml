@@ -5,8 +5,7 @@ image:
   pullPolicy: Always
   tag: latest
 
-imagePullSecrets: 
-  - name: gitea-creds
+imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
@@ -16,9 +15,7 @@ serviceAccount:
   name: ""
 
 configuration:
-  SECRET_NAME: ""
-  SOURCE_NAMESPACE: ""
-  TARGET_IMAGE: ""
+  SYNC_CONFIGS: ""
 
 podAnnotations: {}
 podSecurityContext: {}

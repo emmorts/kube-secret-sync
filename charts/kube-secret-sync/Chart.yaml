@@ -1,6 +1,12 @@
 apiVersion: v2
 name: kube-secret-sync
-description: A Helm chart for Kubernetes
-type: application
+description: Kubernetes controller that automatically syncs secrets across namespaces based on provided configuration. It simplifies the management of secrets in multi-tenant environments by ensuring that specific secrets are available in the required namespaces.
 version: 0.1.0
 appVersion: "0.1.0"
+home: https://github.com/emmorts/kube-secret-sync
+sources:
+- https://github.com/emmorts/kube-secret-sync
+maintainers:
+- name: Tomas Stropus
+  email: tomas@stropus.dev
+  url: https://github.com/emmorts

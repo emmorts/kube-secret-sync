@@ -1,6 +1,6 @@
 # kube-secret-sync
 
-**kube-secret-sync** is a Kubernetes controller that automatically syncs secrets across namespaces based on provided configuration. It simplifies the management of secrets in multi-tenant environments by ensuring that specific secrets are available in the required namespaces.
+Kubernetes controller that automatically syncs secrets across namespaces based on provided configuration. It simplifies the management of secrets in multi-tenant environments by ensuring that specific secrets are available in the required namespaces.
 
 ## Features
 

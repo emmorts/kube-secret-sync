@@ -36,10 +36,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ include "kube-secret-sync.configmap" . }}
-          args:
-            - "--secret-name=gitea-creds"
-            - "--source-namespace=default"
-            - "--target-image=git.stropus.dev"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
