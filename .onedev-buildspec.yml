@@ -10,11 +10,11 @@ jobs:
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !BuildImageWithKanikoStep
     name: publish docker image
-    destinations: '@server_host@/@project_path@:latest'
+    destinations: '@server_host@/@project_path@:latest @server_host@/@project_path@:@tag@'
     builtInRegistryAccessTokenSecret: ci-token
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
-  - !BranchUpdateTrigger
+  - !TagCreateTrigger
     branches: main
     projects: ops/kube-secret-sync
   retryCondition: never
