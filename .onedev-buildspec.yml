@@ -13,6 +13,10 @@ jobs:
     destinations: '@server_host@/@project_path@:latest'
     builtInRegistryAccessTokenSecret: ci-token
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !BranchUpdateTrigger
+    branches: main
+    projects: ops/kube-secret-sync
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
