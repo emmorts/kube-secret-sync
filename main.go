@@ -7,7 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"reflect"
+
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
@@ -155,25 +158,44 @@ func (c *PodController) processPod(pod *v1.Pod) error {
 }
 
 func (c *PodController) cloneSecretToNamespace(namespace string, config Config) error {
-	if _, err := c.clientset.CoreV1().Secrets(namespace).Get(context.TODO(), config.secretName, metav1.GetOptions{}); err == nil {
-		klog.Infof("Secret '%s' already exists in namespace '%s'", config.secretName, namespace)
-		return nil
-	}
 	secret, err := c.clientset.CoreV1().Secrets(config.sourceNamespace).Get(context.TODO(), config.secretName, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get secret '%s' from source namespace '%s': %v", config.secretName, config.sourceNamespace, err)
 		return err
 	}
-	secret.Namespace = namespace
-	secret.ResourceVersion = ""
-	secret.UID = ""
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		_, err := c.clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
-		if err != nil {
-			klog.Errorf("Failed to clone secret '%s' to namespace '%s': %v", config.secretName, namespace, err)
+	targetSecret, err := c.clientset.CoreV1().Secrets(namespace).Get(context.TODO(), config.secretName, metav1.GetOptions{})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			klog.Errorf("Failed to get secret '%s' from target namespace '%s': %v", config.secretName, namespace, err)
 			return err
 		}
-		klog.Infof("Successfully cloned secret '%s' to namespace '%s'", config.secretName, namespace)
-		return nil
-	})
+		// Secret doesn't exist in the target namespace, create it
+		secret.Namespace = namespace
+		secret.ResourceVersion = ""
+		secret.UID = ""
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			_, err := c.clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+			if err != nil {
+				klog.Errorf("Failed to clone secret '%s' to namespace '%s': %v", config.secretName, namespace, err)
+				return err
+			}
+			klog.Infof("Successfully cloned secret '%s' to namespace '%s'", config.secretName, namespace)
+			return nil
+		})
+	}
+	// Secret exists in the target namespace, update it if it differs from the source secret
+	if !reflect.DeepEqual(secret.Data, targetSecret.Data) {
+		targetSecret.Data = secret.Data
+		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			_, err := c.clientset.CoreV1().Secrets(namespace).Update(context.TODO(), targetSecret, metav1.UpdateOptions{})
+			if err != nil {
+				klog.Errorf("Failed to update secret '%s' in namespace '%s': %v", config.secretName, namespace, err)
+				return err
+			}
+			klog.Infof("Successfully updated secret '%s' in namespace '%s'", config.secretName, namespace)
+			return nil
+		})
+	}
+	klog.Infof("Secret '%s' in namespace '%s' is up to date", config.secretName, namespace)
+	return nil
 }
