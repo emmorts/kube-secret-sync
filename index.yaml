@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  kube-secret-sync:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-03-06T19:07:16.538829032Z"
+    description: Kubernetes controller that automatically syncs secrets across namespaces
+      based on provided configuration. It simplifies the management of secrets in
+      multi-tenant environments by ensuring that specific secrets are available in
+      the required namespaces.
+    digest: 3f0a49ecd7cbe0b76fcd9de3541e55c10fea32ab6dbac4e52d2b3f4d4c0374d3
+    home: https://github.com/emmorts/kube-secret-sync
+    maintainers:
+    - email: tomas@stropus.dev
+      name: Tomas Stropus
+      url: https://github.com/emmorts
+    name: kube-secret-sync
+    sources:
+    - https://github.com/emmorts/kube-secret-sync
+    urls:
+    - https://github.com/emmorts/kube-secret-sync/releases/download/kube-secret-sync-0.1.0/kube-secret-sync-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-03-06T19:07:16.538833611Z"
