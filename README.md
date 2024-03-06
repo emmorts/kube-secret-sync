@@ -67,3 +67,5 @@ To use the `kube-secret-sync` controller in your Kubernetes cluster, you can dep
    Ensure that the `kube-secret-sync` pod is running and ready.
 
 Now, the `kube-secret-sync` controller will automatically sync the specified secrets across namespaces based on the provided configurations.
+
+For more information on the available configuration options and their default values, refer to the [chart documentation](charts/kube-secret-sync/README.md).
